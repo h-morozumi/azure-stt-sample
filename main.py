@@ -13,6 +13,7 @@ Usage:
 
 import sys
 import os
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -103,7 +104,7 @@ def transcribe_with_gpt4o_transcribe_diarize(
     client: AzureOpenAI, audio_file_path: str
 ) -> str:
     """
-    Transcribe audio using the gpt-4o-transcribe model with diarization.
+    Transcribe audio using the gpt-4o-transcribe-diarize model with diarization.
 
     Args:
         client: Azure OpenAI client
@@ -114,10 +115,8 @@ def transcribe_with_gpt4o_transcribe_diarize(
     """
     with open(audio_file_path, "rb") as audio_file:
         result = client.audio.transcriptions.create(
-            model="gpt-4o-transcribe",
+            model="gpt-4o-transcribe-diarize",
             file=audio_file,
-            response_format="verbose_json",
-            timestamp_granularities=["word", "segment"],
         )
     return result.text
 
@@ -157,11 +156,16 @@ def main():
     for model_name, transcribe_func in models:
         print(f"\n【{model_name}】")
         print("-" * 40)
+        start_time = time.perf_counter()
         try:
             result = transcribe_func(client, audio_file_path)
             print(result)
+            elapsed = time.perf_counter() - start_time
+            print(f"\nExecution time: {elapsed:.3f} seconds")
         except Exception as e:
             print(f"Error: {e}")
+            elapsed = time.perf_counter() - start_time
+            print(f"Execution time before error: {elapsed:.3f} seconds")
         print()
 
 
