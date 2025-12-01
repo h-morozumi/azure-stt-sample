@@ -1,0 +1,10 @@
+[project]
+name = "azure-stt-sample"
+version = "0.1.0"
+description = "Azure OpenAI Speech-to-Text comparison sample using Whisper, gpt-4o-transcribe, gpt-4o-mini-transcribe, and gpt-4o-transcribe-diarize models"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=2.8.1",
+    "python-dotenv>=1.2.1",
+]
