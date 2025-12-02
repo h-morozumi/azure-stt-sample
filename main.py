@@ -13,8 +13,10 @@ Usage:
 
 import sys
 import os
+import json
 import time
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from openai import AzureOpenAI
@@ -41,84 +43,34 @@ def get_client() -> AzureOpenAI:
     )
 
 
-def transcribe_with_whisper(client: AzureOpenAI, audio_file_path: str) -> str:
-    """
-    Transcribe audio using the Whisper model.
-
-    Args:
-        client: Azure OpenAI client
-        audio_file_path: Path to the audio file
-
-    Returns:
-        Transcribed text
-    """
+def transcribe_audio(client: AzureOpenAI, audio_file_path: str, model: str) -> Any:
+    """Run a transcription request for the specified model."""
     with open(audio_file_path, "rb") as audio_file:
         result = client.audio.transcriptions.create(
-            model="whisper",
+            model=model,
             file=audio_file,
         )
-    return result.text
+    return result
 
 
-def transcribe_with_gpt4o_transcribe(client: AzureOpenAI, audio_file_path: str) -> str:
-    """
-    Transcribe audio using the gpt-4o-transcribe model.
+def format_response_json(response: Any) -> str:
+    """Return a pretty JSON string of the transcription response for debugging."""
+    if hasattr(response, "model_dump_json"):
+        raw_json = response.model_dump_json()
+        try:
+            parsed = json.loads(raw_json)
+        except json.JSONDecodeError:
+            return raw_json
+        return json.dumps(parsed, ensure_ascii=False, indent=2)
 
-    Args:
-        client: Azure OpenAI client
-        audio_file_path: Path to the audio file
+    if hasattr(response, "model_dump"):
+        payload = response.model_dump()
+    elif hasattr(response, "to_dict"):
+        payload = response.to_dict()
+    else:
+        payload = getattr(response, "__dict__", response)
 
-    Returns:
-        Transcribed text
-    """
-    with open(audio_file_path, "rb") as audio_file:
-        result = client.audio.transcriptions.create(
-            model="gpt-4o-transcribe",
-            file=audio_file,
-        )
-    return result.text
-
-
-def transcribe_with_gpt4o_mini_transcribe(
-    client: AzureOpenAI, audio_file_path: str
-) -> str:
-    """
-    Transcribe audio using the gpt-4o-mini-transcribe model.
-
-    Args:
-        client: Azure OpenAI client
-        audio_file_path: Path to the audio file
-
-    Returns:
-        Transcribed text
-    """
-    with open(audio_file_path, "rb") as audio_file:
-        result = client.audio.transcriptions.create(
-            model="gpt-4o-mini-transcribe",
-            file=audio_file,
-        )
-    return result.text
-
-
-def transcribe_with_gpt4o_transcribe_diarize(
-    client: AzureOpenAI, audio_file_path: str
-) -> str:
-    """
-    Transcribe audio using the gpt-4o-transcribe-diarize model with diarization.
-
-    Args:
-        client: Azure OpenAI client
-        audio_file_path: Path to the audio file
-
-    Returns:
-        Transcribed text with speaker identification
-    """
-    with open(audio_file_path, "rb") as audio_file:
-        result = client.audio.transcriptions.create(
-            model="gpt-4o-transcribe-diarize",
-            file=audio_file,
-        )
-    return result.text
+    return json.dumps(payload, ensure_ascii=False, indent=2, default=str)
 
 
 def main():
@@ -146,20 +98,22 @@ def main():
 
     # Define the models and their corresponding functions
     models = [
-        ("Whisper", transcribe_with_whisper),
-        ("gpt-4o-transcribe", transcribe_with_gpt4o_transcribe),
-        ("gpt-4o-mini-transcribe", transcribe_with_gpt4o_mini_transcribe),
-        ("gpt-4o-transcribe-diarize", transcribe_with_gpt4o_transcribe_diarize),
+        "whisper",
+        "gpt-4o-transcribe",
+        "gpt-4o-mini-transcribe",
+        "gpt-4o-transcribe-diarize",
     ]
 
     # Run transcription with each model
-    for model_name, transcribe_func in models:
+    for model_name in models:
         print(f"\n【{model_name}】")
         print("-" * 40)
         start_time = time.perf_counter()
         try:
-            result = transcribe_func(client, audio_file_path)
-            print(result)
+            response = transcribe_audio(client, audio_file_path, model_name)
+            print(response.text)
+            print("\n[Debug] Response JSON:")
+            print(format_response_json(response))
             elapsed = time.perf_counter() - start_time
             print(f"\nExecution time: {elapsed:.3f} seconds")
         except Exception as e:
