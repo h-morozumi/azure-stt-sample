@@ -43,12 +43,18 @@ def get_client() -> AzureOpenAI:
     )
 
 
-def transcribe_audio(client: AzureOpenAI, audio_file_path: str, model: str) -> Any:
+def transcribe_audio(
+    client: AzureOpenAI,
+    audio_file_path: str,
+    model: str,
+    response_format: str = "verbose_json",
+) -> Any:
     """Run a transcription request for the specified model."""
     with open(audio_file_path, "rb") as audio_file:
         result = client.audio.transcriptions.create(
             model=model,
             file=audio_file,
+            response_format=response_format,
         )
     return result
 
@@ -98,19 +104,26 @@ def main():
 
     # Define the models and their corresponding functions
     models = [
-        "whisper",
-        "gpt-4o-transcribe",
-        "gpt-4o-mini-transcribe",
-        "gpt-4o-transcribe-diarize",
+        {"name": "whisper", "response_format": "json"},
+        {"name": "gpt-4o-transcribe", "response_format": "json"},
+        {"name": "gpt-4o-mini-transcribe", "response_format": "json"},
+        {"name": "gpt-4o-transcribe-diarize", "response_format": "diarized_json"},
     ]
 
     # Run transcription with each model
-    for model_name in models:
+    for model in models:
+        model_name = model["name"]
+        response_format = model["response_format"]
         print(f"\n【{model_name}】")
         print("-" * 40)
         start_time = time.perf_counter()
         try:
-            response = transcribe_audio(client, audio_file_path, model_name)
+            response = transcribe_audio(
+                client,
+                audio_file_path,
+                model_name,
+                response_format=response_format,
+            )
             print(response.text)
             print("\n[Debug] Response JSON:")
             print(format_response_json(response))
