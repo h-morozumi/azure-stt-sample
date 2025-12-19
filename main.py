@@ -29,7 +29,7 @@ def get_client() -> AzureOpenAI:
     """Create and return an Azure OpenAI client."""
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     api_key = os.getenv("AZURE_OPENAI_API_KEY")
-    api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2025-01-01-preview")
+    api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2025-04-01-preview")
 
     if not endpoint or not api_key:
         raise ValueError(
@@ -107,6 +107,11 @@ def main():
         {"name": "whisper", "response_format": "json"},
         {"name": "gpt-4o-transcribe", "response_format": "json"},
         {"name": "gpt-4o-mini-transcribe", "response_format": "json"},
+        # NOTE:
+        # - Switching `response_format` between `json` and `diarized_json` changes the output shape
+        #   (e.g., whether speaker attribution / diarization-related fields are present).
+        # - Official REST docs define response_format as: json/text/srt/verbose_json/vtt, and also note
+        #   that some gpt-4o transcription models support only `json`. If `diarized_json` fails, use `json`.
         {"name": "gpt-4o-transcribe-diarize", "response_format": "diarized_json"},
     ]
 
