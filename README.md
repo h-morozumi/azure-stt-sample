@@ -13,9 +13,16 @@ Azure OpenAI の音声認識モデルを比較するサンプルアプリケー�
 
 ## 前提条件
 
+- Azureの[アカウント](https://portal.azure.com)
 - Python 3.12 以上
 - [uv](https://docs.astral.sh/uv/) パッケージマネージャー
 - Azure OpenAI リソース（上記モデルがデプロイされていること）
+
+## Install uv
+
+```
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ## セットアップ
 
